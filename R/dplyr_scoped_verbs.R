@@ -19,3 +19,7 @@ data("mpg")
 
 test <- mpg %>% 
   mutate_if(is.double, list(~ as.integer(.)))
+
+test <- nycflights13::flights %>% 
+  select_if(function(col_class) is.double(col_class) || is.integer(col_class))
+
