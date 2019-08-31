@@ -14,8 +14,17 @@ my_server <- function(session, input, output) {
     
   })
   
-  output$selected_rows <- 
-    eventReactive()
+  observeEvent(input$my_datatable_rows_selected, {
+    
+    selected_lats <- eventReactive(input$my_datatable_rows_selected, {
+      as.list(quakes$lat[c(unique(input$my_datatable_rows_selected))])
+    })
+    
+    selected_longs <- eventReactive(input$my_datatable_rows_selected, {
+      as.list(quakes$long[c(unique(input$my_datatable_rows_selected))])
+    })
+    
+  })
   
   
 }
