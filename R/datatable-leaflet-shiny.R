@@ -14,6 +14,7 @@ my_server <- function(session, input, output) {
     
   })
   
+  
   observeEvent(input$my_datatable_rows_selected, {
     
     selected_lats <- eventReactive(input$my_datatable_rows_selected, {
@@ -24,7 +25,54 @@ my_server <- function(session, input, output) {
       as.list(quakes$long[c(unique(input$my_datatable_rows_selected))])
     })
     
+    # this is the data that will be passed to the leaflet in the addCircleMarkers argument
+    coord_df <- reactive({
+      tibble(lat = unlist(selected_lats()),
+             lng = unlist(selected_longs()))
+    })
+    
+  })
+  
+  
+  output$my_leaflet <- renderLeaflet({
+    
+    coord_df() %>% 
+      leaflet() %>% 
+    
   })
   
   
 }
+
+
+my_sidebar <- dashboardSidebar()
+
+my_header <- dashboardHeader(title = "Fiji Earthquakes")
+
+my_body <- dashboardBody(
+  
+  fluidRow(
+    box(
+      width = 12,
+      solidHeader = TRUE,
+      DTOutput(
+        "my_datatable"
+      )
+    )
+  ),
+  fluidRow(
+    box(
+      width = 12,
+      solidHeader = TRUE,
+      leafletOutput(
+        "my_leaflet"
+      )
+    )
+  )
+  
+)
+
+
+
+
+
