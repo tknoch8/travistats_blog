@@ -16,36 +16,24 @@ my_server <- function(session, input, output) {
     
   })
   
-  # create a proxy to modify datatable without recreating it completely
-  DT_proxy <- dataTableProxy("my_datatable")
-  
-  # clear row selections when clear_rows_button is clicked
-  observeEvent(input$clear_rows_button, {
-    selectRows(DT_proxy, NULL)
-  })
-  
-  # select all rows when select_all_rows_button is clicked
-  observeEvent(input$select_all_rows_button, {
-    selectRows(DT_proxy, input$my_datatable_rows_all)
-  })
-  
-  
-  my_map <- leaflet() %>% 
-    addProviderTiles(
-      provider = providers$CartoDB.Positron,
-      options = providerTileOptions(
-        noWrap = FALSE
-      )
-    ) %>% 
-    setView(
-      lat = -25.5,
-      lng = 178.58,
-      zoom = 4
-    )
-  
   
   # base map that we will add points to with leafletProxy()
-  output$my_leaflet <- renderLeaflet({ my_map })
+  output$my_leaflet <- renderLeaflet({
+    
+    leaflet() %>% 
+      addProviderTiles(
+        provider = providers$CartoDB.Positron,
+        options = providerTileOptions(
+          noWrap = FALSE
+        )
+      ) %>% 
+      setView(
+        lat = -25.5,
+        lng = 178.58,
+        zoom = 4
+      )
+    
+  })
   
   observeEvent(input$my_datatable_rows_selected, {
     
@@ -100,8 +88,22 @@ my_server <- function(session, input, output) {
     
   })
   
+  # create a proxy to modify datatable without recreating it completely
+  DT_proxy <- dataTableProxy("my_datatable")
+  
+  # clear row selections when clear_rows_button is clicked
+  observeEvent(input$clear_rows_button, {
+    selectRows(DT_proxy, NULL)
+  })
+  
+  # clear markers from leaflet when clear_rows_button is clicked
   observeEvent(input$clear_rows_button, {
     clearMarkers(leafletProxy("my_leaflet", session))
+  })
+  
+  # select all rows when select_all_rows_button is clicked
+  observeEvent(input$select_all_rows_button, {
+    selectRows(DT_proxy, input$my_datatable_rows_all)
   })
   
 }
