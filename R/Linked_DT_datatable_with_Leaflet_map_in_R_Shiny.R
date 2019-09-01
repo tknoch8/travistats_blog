@@ -1,3 +1,6 @@
+# repo for run app function is at 
+  # https://github.com/tknoch8/linked_datatable_leaflet_app.git
+
 require(tidyverse)
 require(shiny)
 require(shinydashboard)
@@ -109,6 +112,7 @@ my_server <- function(session, input, output) {
 }
 
 
+# ui
 my_sidebar <- dashboardSidebar(
   width = 250,
   sidebarMenu(
