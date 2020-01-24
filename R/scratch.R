@@ -32,33 +32,38 @@ ui <- fluidPage(
     ),
     mainPanel(
       width = 10,
-      column(
-        width = 12,
-        fluidRow(
+      fluidRow(
+        column(
+          width = 6,
           tableOutput(
             "dat_table"
-          ),
-          br(),
-          plotOutput(
-            "pairs_plot"
-          )
-        ),
-        fluidRow(
-          column(
-            width = 12,
-            verbatimTextOutput(
-              "formula_text"
-            ),
-            verbatimTextOutput(
-              "reg_out"
-            )
           )
         )
+        # column(
+        #   width = 6,
+        #   plotOutput(
+        #     "resid_plots"
+        #   )
+        # )
+      ),
+      fluidRow(
+        plotOutput(
+          "pairs_plot"
+        )
+      ),
+      br(),
+      fluidRow(
+        verbatimTextOutput(
+          "reg_out"
+        )
+      )
     )
   )
 )
 
 server <- function(input, output) {
+  
+  to_export <- reactiveValues()
   
   reg_dat <- reactive({
     
@@ -67,7 +72,7 @@ server <- function(input, output) {
     # so user can choose dependent variable
     ###---
     
-    switch(
+    dat <- switch(
       input$choose_data,
       "mtcars" = datasets::mtcars %>% dplyr::select(mpg, dplyr::everything()),
       "chickens" = as_tibble(datasets::ChickWeight) %>% 
@@ -79,38 +84,56 @@ server <- function(input, output) {
         dplyr::select(sepal_l_setosa, everything())
     )
     
+    to_export$reg_dat <- dat
+    
+    dat
+    
   })
   
   output$pairs_plot <- renderPlot({
     
     req(reg_dat())
     
-    reg_dat() %>%
+    p <- reg_dat() %>%
       ggpairs() +
       theme_minimal() +
       theme(panel.grid = element_blank(),
             panel.background = element_rect(fill = "#f2f2f2", color = "#f2f2f2"))
     
+    to_export$pairs_plot <- p
+    
+    p
+    
   })
-  
-  vals <- reactiveValues()
   
   output$reg_out <- renderPrint({
     
     req(reg_dat())
     
-    x_vars <- names(reg_dat()[2:length(reg_dat())]) %>% 
+    reg_names <- colnames(reg_dat())
+    
+    len <- length(reg_names)
+    message("\n... length of req_dat(): ", length(reg_dat()), "\n")
+    
+    x_vars <- reg_names[2:len] %>% 
       paste(collapse = " + ")
     
-    my_formula <<- as.formula(paste0(names(reg_dat()[1]), " ~ ", x_vars))
+    dep_var <- reg_names[1]
+    
+    message("\n... pre-formula: ", paste0(dep_var, " ~ ", x_vars), "\n")
+    
+    my_formula <- paste0(dep_var, " ~ ", x_vars)
     
     message("\n...reg_vars: ", x_vars, "\n")
+    message("\n...formula: ", as.character(my_formula))
     
     reg_sum <- reg_dat() %>% 
-      lm(my_formula, data = .) %>% 
+      lm(noquote(my_formula), data = .) %>% 
       summary()
     
-    vals$call <- my_formula
+    reg_sum$call <- sym(my_formula)
+    
+    to_export$reg_sum <- reg_sum
     
     reg_sum
     
@@ -118,59 +141,67 @@ server <- function(input, output) {
   
   # output$resid_plots <- plotOutput({
   #   
-  #   stud_res <- studres(
+  #   req(reg_dat())
+  #   
+  #   mod <- reactive({
   #     reg_dat() %>% 
-  #       lm(my_formula, data = .)
-  #   )
+  #       lm(noquote(my_formula), data = .)
+  #   })
   #   
+  #   stud_res <- reactive({ studres(mod()) })
   #   
+  #   plot(stud_res(), mod()$fitted.values)
   #   
   # })
   
-  output$formula_text <- renderText({
-    
-    isolate(vals$call)
-    
-  })
+  # output$formula_text <- renderText({
+  #   
+  #   isolate(vals$call)
+  #   
+  # })
   
   output$dat_table <- renderTable({
     
     req(reg_dat())
-    head(reg_dat())
+    t <- head(reg_dat())
+    
+    to_export$dat_table <- t
+    
+    t
     
   })
   
-  # output$report_handler <- downloadHandler(
-  #   
-  #   filename = "sample_report.pdf",
-  #   content = function(file) {
-  #     # Copy the report file to a temporary directory before processing it, in
-  #     # case we don't have write permissions to the current working dir (which
-  #     # can happen when deployed).
-  #     tempReport <- file.path(tempdir(), "png_to_pdf.Rmd")
-  #     message("\n... tempReport path: ", tempReport, "\n")
-  #     
-  #     file.copy("png_to_pdf.Rmd", tempReport, overwrite = TRUE)
-  #     
-  #     # set up parameters to pass to to Rmd template
-  #     # can also pass reactiveValues or reactive objects
-  #     pass_params <- list(
-  #       plots_for_export = plots_for_export
-  #     )
-  #     
-  #     # Knit the document, passing in the `params` list, and eval it in a
-  #     # child of the global environment (this isolates the code in the document
-  #     # from the code in this app).
-  #     rmarkdown::render(
-  #       tempReport,
-  #       output_file = file,
-  #       params = pass_params,
-  #       envir = new.env(parent = globalenv())
-  #     )
-  #     
-  #   }
-  #   
-  # )
+  output$report_gen <- downloadHandler(
+
+    filename = "sample_report.pdf",
+    content = function(file) {
+      # Copy the report file to a temporary directory before processing it, in
+      # case we don't have write permissions to the current working dir (which
+      # can happen when deployed).
+      tempReport <- file.path(tempdir(), "report_template.Rmd")
+      message("\n... tempReport path: ", tempReport, "\n")
+
+      file.copy("report_template.Rmd", tempReport, overwrite = TRUE)
+
+      # set up parameters to pass to to Rmd template
+      # can also pass reactiveValues or reactive objects
+      pass_params <- list(
+        imported = to_export
+      )
+
+      # Knit the document, passing in the `params` list, and eval it in a
+      # child of the global environment (this isolates the code in the document
+      # from the code in this app).
+      rmarkdown::render(
+        tempReport,
+        output_file = file,
+        params = pass_params,
+        envir = new.env(parent = globalenv())
+      )
+
+    }
+
+  )
   
 }
 

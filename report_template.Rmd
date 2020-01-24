@@ -1,0 +1,30 @@
+---
+title: "report_template"
+date: "`r Sys.time()`"
+output: pdf_document
+classoption: landscape
+params:
+  imported: NA
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+require(kableExtra)
+```
+
+
+```{r table, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+params$imported$dat_table %>% kable()
+  
+```
+
+```{r pairs, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+params$imported$pairs_plot
+```
+
+```{r sum, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+params$imported$reg_sum
+```
