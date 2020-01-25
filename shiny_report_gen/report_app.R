@@ -38,13 +38,13 @@ ui <- fluidPage(
           tableOutput(
             "dat_table"
           )
+        ),
+        column(
+          width = 6,
+          plotOutput(
+            "resid_plots"
+          )
         )
-        # column(
-        #   width = 6,
-        #   plotOutput(
-        #     "resid_plots"
-        #   )
-        # )
       ),
       fluidRow(
         plotOutput(
@@ -139,25 +139,33 @@ server <- function(input, output) {
     
   })
   
-  # output$resid_plots <- plotOutput({
-  #   
-  #   req(reg_dat())
-  #   
-  #   mod <- reactive({
-  #     reg_dat() %>% 
-  #       lm(noquote(my_formula), data = .)
-  #   })
-  #   
-  #   stud_res <- reactive({ studres(mod()) })
-  #   
-  #   plot(stud_res(), mod()$fitted.values)
-  #   
-  # })
-  
+  output$resid_plots <- plotOutput({
+
+    req(reg_dat())
+
+    # mod <- reactive({
+    #   reg_dat() %>%
+    #     lm(noquote(my_formula), data = .)
+    # })
+    
+    reg_dat() %>% 
+      lm(noquote(my_formula), data = .) %>% 
+      studres() -> stud_res
+    
+    reg_dat() %>% 
+      lm(noquote(my_formula), data = .) %>% 
+      pluck(fitted.values) -> fit_vals
+    
+    # stud_res <- reactive({ studres(mod()) })
+
+    plot(isolate(stud_res), isolate(fit_vals))
+
+  })
+
   # output$formula_text <- renderText({
-  #   
+  #
   #   isolate(vals$call)
-  #   
+  #
   # })
   
   output$dat_table <- renderTable({
@@ -181,7 +189,7 @@ server <- function(input, output) {
       tempReport <- file.path(tempdir(), "report_template.Rmd")
       message("\n... tempReport path: ", tempReport, "\n")
 
-      file.copy("report_template.Rmd", tempReport, overwrite = TRUE)
+      file.copy(here::here("shiny_report_gen", "report_template.Rmd"), tempReport, overwrite = TRUE)
 
       # set up parameters to pass to to Rmd template
       # can also pass reactiveValues or reactive objects
