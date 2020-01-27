@@ -1,0 +1,51 @@
+body {
+margin: 0;
+font-size: 1rem;
+font-weight: 300;
+line-height: 1.5;
+color: #c8c8c8;
+text-align: left;
+background-color: #262626;
+}
+
+.selectize-control {
+margin-bottom: 10px;
+margin-left: 2px;
+}
+
+.open>.dropdown-menu {
+display: block;
+}
+
+input[type=search] {
+  color: #595959;
+  background-color: #b3b3b3;
+}
+
+select {
+color: #595959;
+background-color: #b3b3b3;
+align-items: center;
+white-space: pre;
+}
+
+.btn-default {
+font-size:1rem;
+}
+
+.table>thead>tr>th {
+border-bottom: 2px solid #929caf;
+}
+    
+.table>tbody>tr>td {
+border-top: 1px solid #2b343b!important;
+}
+
+table.dataTable tbody td {
+padding: 4px 5px;
+}
+    
+table.dataTable tbody tr.odd.selected,
+table.dataTable tbody tr.odd.selected {
+background-color: #cb8c4d !important;
+}

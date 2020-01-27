@@ -6,15 +6,12 @@ require(datasets)
 require(rmarkdown)
 require(GGally)
 require(janitor)
-# require(corrgram)
+require(DT)
 require(MASS)
 require(tidyverse)
 
 
 ui <- fluidPage(
-  theme = shinytheme("slate"),
-  tags$style(type = "text/css",".recalculating {opacity: 1.0;}"),
-  # includeCSS(path = here::here("www", "styles.css")),
   titlePanel("Report Generator"),
   sidebarLayout(
     sidebarPanel(
@@ -34,15 +31,14 @@ ui <- fluidPage(
       width = 10,
       fluidRow(
         column(
-          width = 6,
-          tableOutput(
-            "dat_table"
-          )
-        ),
-        column(
-          width = 6,
-          plotOutput(
-            "resid_plots"
+          width = 12,
+          br(),
+          div(
+            style = 'overflow-x: scroll; height: auto;',
+            dataTableOutput(
+              "dat_table",
+              width = "100%"
+            )
           )
         )
       ),
@@ -55,6 +51,11 @@ ui <- fluidPage(
       fluidRow(
         verbatimTextOutput(
           "reg_out"
+        ),
+        br(),
+        plotOutput(
+          "resid_plots",
+          width = "100%"
         )
       )
     )
@@ -63,7 +64,7 @@ ui <- fluidPage(
 
 server <- function(input, output) {
   
-  to_export <- reactiveValues()
+  my_vals <- reactiveValues()
   
   reg_dat <- reactive({
     
@@ -84,7 +85,7 @@ server <- function(input, output) {
         dplyr::select(sepal_l_setosa, everything())
     )
     
-    to_export$reg_dat <- dat
+    my_vals$reg_dat <- dat
     
     dat
     
@@ -100,7 +101,7 @@ server <- function(input, output) {
       theme(panel.grid = element_blank(),
             panel.background = element_rect(fill = "#f2f2f2", color = "#f2f2f2"))
     
-    to_export$pairs_plot <- p
+    my_vals$pairs_plot <- p
     
     p
     
@@ -120,9 +121,13 @@ server <- function(input, output) {
     
     dep_var <- reg_names[1]
     
+    my_vals$dep_var <- dep_var
+    
     message("\n... pre-formula: ", paste0(dep_var, " ~ ", x_vars), "\n")
     
     my_formula <- paste0(dep_var, " ~ ", x_vars)
+    
+    my_vals$my_formula <- my_formula
     
     message("\n...reg_vars: ", x_vars, "\n")
     message("\n...formula: ", as.character(my_formula))
@@ -133,47 +138,79 @@ server <- function(input, output) {
     
     reg_sum$call <- sym(my_formula)
     
-    to_export$reg_sum <- reg_sum
+    my_vals$reg_sum <- reg_sum
     
     reg_sum
     
   })
   
-  # output$resid_plots <- plotOutput({
-  #   
-  #   req(reg_dat())
-  # 
-  #   # mod <- reactive({
-  #   #   reg_dat() %>%
-  #   #     lm(noquote(my_formula), data = .)
-  #   # })
-  #   
-  #   reg_dat() %>% 
-  #     lm(noquote(my_formula), data = .) %>% 
-  #     studres() -> stud_res
-  #   
-  #   reg_dat() %>% 
-  #     lm(noquote(my_formula), data = .) %>% 
-  #     pluck(fitted.values) -> fit_vals
-  #   
-  #   # stud_res <- reactive({ studres(mod()) })
-  # 
-  #   plot(isolate(stud_res), isolate(fit_vals))
-  # 
-  # })
-
-  # output$formula_text <- renderText({
-  #
-  #   isolate(vals$call)
-  #
-  # })
+  # mod_vals <- reactiveValues()
   
-  output$dat_table <- renderTable({
+  observeEvent(input$choose_data, {
     
     req(reg_dat())
-    t <- head(reg_dat())
+    req(my_vals)
     
-    to_export$dat_table <- t
+    mod <- reg_dat() %>% 
+      lm(noquote(my_vals$my_formula), data = .)
+    
+    message("\n... calculationg residuals\n")
+    
+    stud_res <- MASS::studres(mod)
+    my_vals$stud_res <- stud_res
+    
+    fit_vals <- mod$fitted.values
+    my_vals$fit_vals <- fit_vals
+    
+    rp <- ggplot(NULL, aes(stud_res, fit_vals)) +
+      geom_point() +
+      theme_minimal() +
+      theme(panel.grid = element_blank(),
+            panel.background = element_rect(fill = "#f2f2f2", color = "#f2f2f2"))
+    
+    my_vals$resid_plot <- rp
+    
+  })
+  
+  output$resid_plots <- renderPlot({
+    
+    req(my_vals)  
+    
+    my_vals$resid_plot
+
+  })
+  
+  output$dat_table <- renderDataTable({
+    
+    req(reg_dat())
+    
+    t <- datatable(
+      reg_dat(),
+      width = "100%",
+      rownames = FALSE,
+      #filter = "top",
+      extensions = c('Scroller', 'FixedColumns', 'Buttons'),  # ???
+      options = list(
+        buttons = c('csv', 'excel'),
+        dom = "Bftlp",
+        autoWidth = FALSE,
+        deferRender = TRUE,  # ???
+        scroller = TRUE,
+        scrollY = 500,
+        scrollX = TRUE
+        #pageLength = 15,
+        #fixedColumns = TRUE
+        # columnDefs = list(
+        #   list(
+        #     width = "120",
+        #     targets = "_all"
+        #   )
+        # )
+      )
+    )
+      
+    # only need to print some of the data in the report
+    my_vals$dat_table <- head(reg_dat(), 15)
     
     t
     
@@ -188,13 +225,14 @@ server <- function(input, output) {
       # can happen when deployed).
       tempReport <- file.path(tempdir(), "report_template.Rmd")
       message("\n... tempReport path: ", tempReport, "\n")
-
+      
+      # copy the report template into the temp directory
       file.copy(here::here("shiny_report_gen", "report_template.Rmd"), tempReport, overwrite = TRUE)
 
       # set up parameters to pass to to Rmd template
       # can also pass reactiveValues or reactive objects
       pass_params <- list(
-        imported = to_export
+        imported = my_vals
       )
 
       # Knit the document, passing in the `params` list, and eval it in a
@@ -206,7 +244,7 @@ server <- function(input, output) {
         params = pass_params,
         envir = new.env(parent = globalenv())
       )
-
+      
     }
 
   )
@@ -214,8 +252,3 @@ server <- function(input, output) {
 }
 
 shinyApp(ui, server)
-
-
-
-
-

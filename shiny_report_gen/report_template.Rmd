@@ -16,14 +16,20 @@ require(kableExtra)
 ```
 
 
+## Quick view of the data:
+
 ```{r table, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 params$imported$dat_table %>% kable()
   
 ```
 
+## Relationships between all variables:
+
 ```{r pairs, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 params$imported$pairs_plot
 ```
+
+## Summary of `r as.character(params$imported$dep_var)` ~ x1 ... xi:
 
 ```{r sum, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 params$imported$reg_sum
