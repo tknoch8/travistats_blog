@@ -12,13 +12,16 @@ knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
 require(kableExtra)
+
 ```
 
 
 ## Quick view of the data:
 
 ```{r table, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
 params$imported$dat_table %>% kable()
   
 ```
@@ -26,11 +29,21 @@ params$imported$dat_table %>% kable()
 ## Relationships between all variables:
 
 ```{r pairs, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
-params$imported$pairs_plot
+
+# Since we only want a few of the variables in the ggpairs plot,
+# we use a copy of the original data that we passes to the markdown 
+# in the "imported" reactiveValues object
+
+params$imported$reg_dat %>% 
+  select(params$imported$user_cols) %>% 
+  ggpairs()
+
 ```
 
 ## Summary of `r as.character(params$imported$dep_var)` ~ x1 ... xi:
 
 ```{r sum, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
 params$imported$reg_sum
+
 ```

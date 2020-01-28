@@ -1,7 +1,5 @@
 # code for showing how to use downloadHandler to generate markdowns from a shiny
 require(shiny)
-require(shinythemes)
-require(plotly)
 require(datasets)
 require(rmarkdown)
 require(GGally)
@@ -19,6 +17,9 @@ ui <- fluidPage(
       downloadButton(
         "report_gen",
         "Create Report"
+      ),
+      uiOutput(
+        "choose_ggpairs_cols",
       ),
       br(),
       selectInput(
@@ -68,11 +69,6 @@ server <- function(input, output) {
   
   reg_dat <- reactive({
     
-    ###---
-    # convert dependent vars to a seltInput that depends on input$choose data
-    # so user can choose dependent variable
-    ###---
-    
     dat <- switch(
       input$choose_data,
       "mtcars" = datasets::mtcars %>% dplyr::select(mpg, dplyr::everything()),
@@ -85,6 +81,7 @@ server <- function(input, output) {
         dplyr::select(sepal_l_setosa, everything())
     )
     
+    # to pass to markdown
     my_vals$reg_dat <- dat
     
     dat
@@ -104,6 +101,28 @@ server <- function(input, output) {
     my_vals$pairs_plot <- p
     
     p
+    
+  })
+  
+  output$choose_ggpairs_cols <- renderUI({
+    
+    my_choices <- reg_dat() %>% 
+      names()
+    
+    selectInput(
+      "choose_ggpairs_cols",
+      "Cols for ggpairs in report",
+      choices = my_choices,
+      selected = my_choices[1:4],
+      multiple = TRUE
+    )
+    
+  })
+  
+  # capture the user's chosen columns and add to reactiveValues object
+  observeEvent(input$choose_ggpairs_cols, {
+    
+    my_vals$user_cols <- input$choose_ggpairs_cols
     
   })
   
