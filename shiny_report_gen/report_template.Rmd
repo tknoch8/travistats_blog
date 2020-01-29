@@ -3,6 +3,8 @@ title: "report_template"
 date: "`r Sys.time()`"
 output: pdf_document
 classoption: landscape
+# params begin as NA and then are overwritten by the object passed in as params in the render function
+# inside the donloadHandler function in the server function of the app.
 params:
   imported: NA
 ---
@@ -22,7 +24,9 @@ require(kableExtra)
 
 ```{r table, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
-params$imported$dat_table %>% kable()
+# objects passed as params are accessed from params$imported
+params$imported$dat_table %>% 
+  kable()
   
 ```
 
