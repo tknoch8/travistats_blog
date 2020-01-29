@@ -63,6 +63,7 @@ ui <- fluidPage(
   )
 )
 
+
 server <- function(input, output) {
   
   my_vals <- reactiveValues()
@@ -107,8 +108,8 @@ server <- function(input, output) {
   
   output$choose_ggpairs_cols <- renderUI({
     
-    # can't access values/onjects from server in ui, so this selectInput needs to be made
-    # as a renderUI
+    # can't access values/onjects from server in ui, so this selectInput 
+    # needs to be made as a renderUI
     
     # capture variables available from the selected dataset
     my_choices <- reg_dat() %>% 
@@ -143,7 +144,6 @@ server <- function(input, output) {
     
     # get length of names
     len <- length(reg_names)
-    message("\n... length of req_dat(): ", length(reg_dat()), "\n")
     
     # based on how I ordered the variables of each dataset earlier,
     # get all the predictor variables' names and paste them together separated
@@ -155,16 +155,11 @@ server <- function(input, output) {
     dep_var <- reg_names[1]
     my_vals$dep_var <- dep_var
     
-    message("\n... pre-formula: ", paste0(dep_var, " ~ ", x_vars), "\n")
-    
     # create formula for the model
     my_formula <- paste0(dep_var, " ~ ", x_vars)
     
     # store for availability
     my_vals$my_formula <- my_formula
-    
-    message("\n...reg_vars: ", x_vars, "\n")
-    message("\n...formula: ", as.character(my_formula))
     
     reg_mod <- reg_dat() %>% 
       lm(noquote(my_formula), data = .)
@@ -195,19 +190,13 @@ server <- function(input, output) {
     req(reg_dat())
     req(my_vals)
     
-    message("\n... calculating residuals\n")
-    
     # create and store studentized ("leave-one-out") for availability
     stud_res <- MASS::studres(my_vals$reg_mod)
     my_vals$stud_res <- stud_res
     
-    message("\n... getting fitted values\n")
-    
     # create and store fitted values for availability
     fit_vals <- my_vals$reg_mod$fitted.values
     my_vals$fit_vals <- fit_vals
-    
-    message("\n... creating rp\n")
     
     # create studentized residuals vs fitted values plot
     rp <- ggplot(NULL, aes(stud_res, fit_vals)) +
@@ -216,7 +205,6 @@ server <- function(input, output) {
       theme(panel.grid = element_blank(),
             panel.background = element_rect(fill = "#f2f2f2", color = "#f2f2f2"))
     
-    message("\n... storing rp\n")
     # store for availability
     my_vals$resid_plot <- rp
     
@@ -241,7 +229,7 @@ server <- function(input, output) {
       width = "100%",
       rownames = FALSE,
       filter = "top",
-      extensions = c('Scroller', 'FixedColumns', 'Buttons'),  # ???
+      extensions = c('Scroller', 'FixedColumns', 'Buttons'),
       options = list(
         buttons = c('csv', 'excel'),
         dom = "Bftlp",
