@@ -26,6 +26,8 @@ params$imported$dat_table %>% kable()
   
 ```
 
+\pagebreak
+
 ## Relationships between all variables:
 
 ```{r pairs, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
@@ -39,6 +41,8 @@ params$imported$reg_dat %>%
   ggpairs()
 
 ```
+
+\pagebreak
 
 ## Summary of `r as.character(params$imported$dep_var)` ~ x1 ... xi:
 
