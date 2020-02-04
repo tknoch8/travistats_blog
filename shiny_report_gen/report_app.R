@@ -15,13 +15,14 @@ ui <- fluidPage(
     sidebarPanel(
       width = 2,
       downloadButton(
-        "report_gen",
-        "Create Report"
+        outputId = "report_gen",
+        label = "Create my report"
       ),
+      br(),
+      br(),
       uiOutput(
         "choose_ggpairs_cols",
       ),
-      br(),
       selectInput(
         "choose_data",
         "Select data to use",
@@ -66,6 +67,8 @@ ui <- fluidPage(
 
 server <- function(input, output) {
   
+  # initialize reactiveValues object that will contain the plots/data that we will
+  # pass to the R Markdown document
   my_vals <- reactiveValues()
   
   reg_dat <- reactive({
@@ -260,7 +263,8 @@ server <- function(input, output) {
       message("\n... temp_report path: ", temp_report, "\n")
       
       # copy the report template into the temp directory
-      file.copy(here::here("shiny_report_gen", "report_template.Rmd"), temp_report, overwrite = TRUE)
+      file.copy(here::here("shiny_report_gen", "report_template.Rmd"), 
+                temp_report, overwrite = TRUE)
 
       # create a named list of parameters to pass to to Rmd template.
       # can also pass reactiveValues or reactive objects
