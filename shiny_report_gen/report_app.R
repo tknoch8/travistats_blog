@@ -1,4 +1,3 @@
-# code for showing how to use downloadHandler to generate markdowns from a shiny
 require(shiny)
 require(datasets)
 require(rmarkdown)
