@@ -1,2 +1,2 @@
-# wordpress
+# travisknocheRstats.com
 code accompanying my blog
