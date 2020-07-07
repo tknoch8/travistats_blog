@@ -1,0 +1,176 @@
+---
+title: "rmarkdown_embedded_shiny_app"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In this post, I will cover how to embed a Shiny app within an R Markdown document. It is useful to be able to do this when you don't have RStudio Connect or you don't want to use shinyapps.io to host your app. To demonstrate, we will make a simple app in which we can explore the attitude dataset from the datasets package. You will want to set the "output" YAML paramter to "html_document" as well. The code for the full app is at the bottom of the post, as well as at my [GitHub](https://github.com/tknoch8/travistats_blog)
+
+## Setup
+
+First, let's bring in the libraries we need as well as make sure we have the datasets package installed from CRAN. Let's also select only the numeric columns for purposes of demonstration, and declare our ggplot2 theme preference.
+
+```{r, eval=FALSE}
+require(shiny)
+require(tidyverse)
+
+if (!"datasets" %in% installed.packages()) install.packages("datasets")
+
+att <- datasets::attitude %>% 
+  select_if(is.numeric)
+
+theme_set(theme_light())
+```
+
+## UI
+
+Formatted this way, the ui and server are both named arguments within the shinyApp function. This and the next chunk can be pasted together for the complete shinyApp function. Here we define the ui of the app just like we would with any other app.
+
+```{r, eval=FALSE}
+shinyApp(
+  
+  ui = fluidPage(
+    fluidRow(
+      column(
+        width = 4,
+        selectInput(
+          "pick_var_1",
+          "Pick x variable:",
+          multiple = FALSE,
+          choices = names(att),
+          selected = names(att)[1]
+        )
+      ),
+      column(
+        width = 4,
+        selectInput(
+          "pick_var_2",
+          "Pick y variable:",
+          multiple = FALSE,
+          choices = names(att),
+          selected = names(att)[2]
+        )
+      )
+    ),
+    br(),
+    plotOutput(
+      "my_scatter"
+    )
+  ),
+```
+
+## Server
+
+In this example, we make use of some "tidy eval" in order to use the selections from the two selectInputs as variable names in making a scatter plot. We wrap the values from our selectInputs in the functions noquote and sym. We then refer to those newly created variables, var_1 and var_2, by wrapping them in double curly-braces.
+
+```{r, eval=FALSE}
+server = function(input, output) {
+    
+    observe({
+      
+      req(att)
+      req(input$pick_var_1)
+      req(input$pick_var_2)
+      
+      var_1 <- sym(noquote(input$pick_var_1))
+      var_2 <- sym(noquote(input$pick_var_2))
+      
+      output$my_scatter <- renderPlot({
+        
+        req(var_1)
+        req(var_2)
+        
+        att %>%
+          ggplot(aes({{var_1}}, {{var_2}})) +
+          geom_point(color = sample(c("red", "blue", "green"), 1))
+      })
+      
+    })
+    
+  }
+  
+)
+```
+
+## Full document code
+
+Finally, here is the full document code
+
+vvv Click me!! vvv
+
+```{r}
+require(shiny)
+require(tidyverse)
+
+if (!"datasets" %in% installed.packages()) install.packages("datasets")
+
+att <- datasets::attitude %>% 
+  select_if(is.numeric)
+
+theme_set(theme_light())
+
+shinyApp(
+  
+  ui = fluidPage(
+    fluidRow(
+      column(
+        width = 4,
+        selectInput(
+          "pick_var_1",
+          "Pick x variable:",
+          multiple = FALSE,
+          choices = names(att),
+          selected = names(att)[1]
+        )
+      ),
+      column(
+        width = 4,
+        selectInput(
+          "pick_var_2",
+          "Pick y variable:",
+          multiple = FALSE,
+          choices = names(att),
+          selected = names(att)[2]
+        )
+      )
+    ),
+    br(),
+    plotOutput(
+      "my_scatter"
+    )
+  ),
+  server = function(input, output) {
+    
+    observe({
+      
+      req(att)
+      req(input$pick_var_1)
+      req(input$pick_var_2)
+      
+      var_1 <- sym(noquote(input$pick_var_1))
+      var_2 <- sym(noquote(input$pick_var_2))
+      
+      output$my_scatter <- renderPlot({
+        
+        req(var_1)
+        req(var_2)
+        
+        att %>%
+          ggplot(aes({{var_1}}, {{var_2}})) +
+          geom_point(color = sample(c("red", "blue", "green"), 1))
+      })
+      
+    })
+    
+  }
+  
+)
+```
+
+## Conclusion
+
+Hopefully this brief example of embedding a shiny app within an R Markdown document is helpful and easy to follow. Comments welcome!
