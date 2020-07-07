@@ -1,5 +1,5 @@
 ---
-title: "rmarkdown_embedded_shiny_app"
+title: "rmarkdown-embedded-shiny-app"
 output: html_document
 runtime: shiny
 ---
